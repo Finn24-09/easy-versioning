@@ -1,0 +1,11 @@
+node_modules/
+lib/
+coverage/
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.tgz
+.env
+.env.local
+docs/superpowers/
