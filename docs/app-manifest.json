@@ -1,0 +1,15 @@
+{
+  "name": "easy-versioning",
+  "url": "https://github.com/<owner>/easy-versioning",
+  "hook_attributes": {
+    "active": false
+  },
+  "redirect_url": "https://github.com/<owner>/easy-versioning",
+  "public": false,
+  "default_permissions": {
+    "contents": "write",
+    "metadata": "read",
+    "pull_requests": "read"
+  },
+  "default_events": []
+}
