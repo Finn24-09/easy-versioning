@@ -7816,7 +7816,7 @@ if (util.nodeMajor > 16 || (util.nodeMajor === 16 && util.nodeMinor >= 8)) {
   module.exports.File = __nccwpck_require__(374).File
   module.exports.FileReader = __nccwpck_require__(2151).FileReader
 
-  const { setGlobalOrigin, getGlobalOrigin } = __nccwpck_require__(2071)
+  const { setGlobalOrigin, getGlobalOrigin } = __nccwpck_require__(4452)
 
   module.exports.setGlobalOrigin = setGlobalOrigin
   module.exports.getGlobalOrigin = getGlobalOrigin
@@ -17741,7 +17741,7 @@ module.exports = { FormData }
 
 /***/ }),
 
-/***/ 2071:
+/***/ 4452:
 /***/ ((module) => {
 
 "use strict";
@@ -20578,7 +20578,7 @@ const {
 const { kEnumerableProperty } = util
 const { kHeaders, kSignal, kState, kGuard, kRealm } = __nccwpck_require__(639)
 const { webidl } = __nccwpck_require__(185)
-const { getGlobalOrigin } = __nccwpck_require__(2071)
+const { getGlobalOrigin } = __nccwpck_require__(4452)
 const { URLSerializer } = __nccwpck_require__(2059)
 const { kHeadersList, kConstruct } = __nccwpck_require__(4980)
 const assert = __nccwpck_require__(2613)
@@ -21527,7 +21527,7 @@ const {
 const { kState, kHeaders, kGuard, kRealm } = __nccwpck_require__(639)
 const { webidl } = __nccwpck_require__(185)
 const { FormData } = __nccwpck_require__(98)
-const { getGlobalOrigin } = __nccwpck_require__(2071)
+const { getGlobalOrigin } = __nccwpck_require__(4452)
 const { URLSerializer } = __nccwpck_require__(2059)
 const { kHeadersList, kConstruct } = __nccwpck_require__(4980)
 const assert = __nccwpck_require__(2613)
@@ -22104,7 +22104,7 @@ module.exports = {
 
 
 const { redirectStatusSet, referrerPolicySet: referrerPolicyTokens, badPortsSet } = __nccwpck_require__(1411)
-const { getGlobalOrigin } = __nccwpck_require__(2071)
+const { getGlobalOrigin } = __nccwpck_require__(4452)
 const { performance } = __nccwpck_require__(2987)
 const { isBlobLike, toUSVString, ReadableStreamFrom } = __nccwpck_require__(701)
 const assert = __nccwpck_require__(2613)
@@ -29216,7 +29216,7 @@ module.exports = {
 const { webidl } = __nccwpck_require__(185)
 const { DOMException } = __nccwpck_require__(1411)
 const { URLSerializer } = __nccwpck_require__(2059)
-const { getGlobalOrigin } = __nccwpck_require__(2071)
+const { getGlobalOrigin } = __nccwpck_require__(4452)
 const { staticPropertyDescriptors, states, opcodes, emptyBuffer } = __nccwpck_require__(8420)
 const {
   kWebSocketURL,
@@ -44877,40 +44877,137 @@ async function getLabelsForCommit(params) {
     return [...all];
 }
 
-;// CONCATENATED MODULE: ./src/git.ts
-async function configureGitIdentity(params) {
-    await params.exec('git', ['config', 'user.name', 'easy-versioning[bot]']);
-    await params.exec('git', [
-        'config',
-        'user.email',
-        `${params.appId}+easy-versioning[bot]@users.noreply.github.com`,
-    ]);
-}
-async function commitAndPush(params) {
-    let attempt = 0;
-    let lastErr = null;
-    while (attempt <= params.maxRetries) {
-        if (attempt > 0) {
-            await params.exec('git', ['fetch', params.remoteUrl, params.branch]);
-            await params.exec('git', ['reset', '--hard', 'FETCH_HEAD']);
-            if (params.onRetry)
-                await params.onRetry();
-        }
-        const addRes = await params.exec('git', ['add', '--', ...params.files]);
-        if (addRes.exitCode !== 0) {
-            throw new Error(`git add failed with exit code ${addRes.exitCode}`);
-        }
-        const commitRes = await params.exec('git', ['commit', '-m', params.message]);
-        if (commitRes.exitCode !== 0) {
-            throw new Error(`git commit failed with exit code ${commitRes.exitCode}`);
-        }
-        const pushRes = await params.exec('git', ['push', params.remoteUrl, `HEAD:${params.branch}`]);
-        if (pushRes.exitCode === 0)
-            return;
-        lastErr = new Error(`git push failed: ${pushRes.stdout}`);
-        attempt++;
+;// CONCATENATED MODULE: ./src/githubRef.ts
+/**
+ * Look up the current HEAD commit SHA for `branch` via the REST refs API. Used
+ * on conflict-retry to refresh the `expectedHeadOid` we pass to
+ * `createCommitOnBranch`.
+ */
+async function getBranchHeadOid(params) {
+    const res = await params.octokit.request('GET /repos/{owner}/{repo}/git/ref/{ref}', {
+        owner: params.owner,
+        repo: params.repo,
+        ref: `heads/${params.branch}`,
+    });
+    const data = res.data;
+    const sha = data?.object?.sha;
+    if (!sha) {
+        throw new Error(`unable to read HEAD SHA for ${params.owner}/${params.repo}@${params.branch}`);
     }
-    throw new Error(`git push failed after ${params.maxRetries + 1} attempts: ${lastErr?.message}`);
+    return sha;
+}
+/**
+ * Fetch the contents of a single file at a given ref via the contents API.
+ * Returns the decoded UTF-8 string.
+ */
+async function getFileContents(params) {
+    const res = await params.octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+        owner: params.owner,
+        repo: params.repo,
+        path: params.path,
+        ref: params.ref,
+    });
+    const data = res.data;
+    if (Array.isArray(data)) {
+        throw new Error(`expected a file at ${params.path}, got a directory listing`);
+    }
+    if (!data || data.type !== 'file' || typeof data.content !== 'string') {
+        throw new Error(`unexpected response shape for contents of ${params.path}`);
+    }
+    const encoding = data.encoding ?? 'base64';
+    if (encoding !== 'base64') {
+        throw new Error(`unsupported content encoding '${encoding}' for ${params.path}`);
+    }
+    // GitHub returns base64 with embedded newlines; Buffer handles those fine.
+    return Buffer.from(data.content, 'base64').toString('utf8');
+}
+
+;// CONCATENATED MODULE: ./src/githubCommit.ts
+
+/**
+ * Raised when `createCommitOnBranch` rejects the mutation because the branch
+ * HEAD has moved away from `expectedHeadOid` (a concurrent push landed). The
+ * caller is expected to refresh state and retry.
+ */
+class CommitConflictError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'CommitConflictError';
+    }
+}
+const CREATE_COMMIT_MUTATION = `
+mutation CreateSignedCommit($input: CreateCommitOnBranchInput!) {
+  createCommitOnBranch(input: $input) {
+    commit {
+      oid
+    }
+  }
+}
+`;
+/**
+ * Heuristic: GitHub's GraphQL API surfaces the stale-head condition as an
+ * error message that mentions `expectedHeadOid`, "expected" + "OID", or
+ * references the ref-update conflict. Anything else (auth failure, bad input,
+ * rate limit) we re-raise as a regular error.
+ */
+function isExpectedHeadOidConflict(err) {
+    const messages = [];
+    if (err instanceof Error && err.message)
+        messages.push(err.message);
+    const errors = err?.errors;
+    if (Array.isArray(errors)) {
+        for (const e of errors) {
+            if (e?.message)
+                messages.push(e.message);
+            if (e?.type)
+                messages.push(e.type);
+        }
+    }
+    const blob = messages.join(' ').toLowerCase();
+    if (!blob)
+        return false;
+    return (blob.includes('expectedheadoid') ||
+        blob.includes('expected head oid') ||
+        (blob.includes('expected') && blob.includes('oid')) ||
+        blob.includes('stale') ||
+        blob.includes('not match'));
+}
+async function createSignedCommit(params) {
+    const additions = params.additions.map((a) => ({
+        path: a.path,
+        contents: Buffer.from(a.contents, 'utf8').toString('base64'),
+    }));
+    const input = {
+        branch: {
+            repositoryNameWithOwner: `${params.owner}/${params.repo}`,
+            branchName: params.branch,
+        },
+        message: params.body
+            ? { headline: params.headline, body: params.body }
+            : { headline: params.headline },
+        expectedHeadOid: params.expectedHeadOid,
+        fileChanges: { additions },
+    };
+    const client = params.__graphqlClient ??
+        ((query, variables) => graphql2(query, {
+            ...variables,
+            headers: { authorization: `token ${params.token}` },
+        }));
+    let response;
+    try {
+        response = (await client(CREATE_COMMIT_MUTATION, { input }));
+    }
+    catch (err) {
+        if (isExpectedHeadOidConflict(err)) {
+            throw new CommitConflictError(`createCommitOnBranch rejected: branch head moved past expectedHeadOid ${params.expectedHeadOid}`);
+        }
+        throw err;
+    }
+    const oid = response?.createCommitOnBranch?.commit?.oid;
+    if (!oid) {
+        throw new Error('createCommitOnBranch returned no commit OID');
+    }
+    return { commitSha: oid };
 }
 
 // EXTERNAL MODULE: ./node_modules/.pnpm/@actions+core@1.11.1/node_modules/@actions/core/lib/core.js
@@ -44937,6 +45034,8 @@ const promises_namespaceObject = require("fs/promises");
 
 
 
+
+const MAX_COMMIT_ATTEMPTS = 4;
 function isENOENT(err) {
     return err?.code === 'ENOENT';
 }
@@ -44973,8 +45072,8 @@ async function runWithEffects(eff) {
         eff.log('no packages match changed files; nothing to bump');
         return;
     }
-    const today = formatToday(eff.now(), config.timezone);
-    const updates = [];
+    let today = formatToday(eff.now(), config.timezone);
+    let updates = [];
     for (const pkg of toBump) {
         const manifestPath = external_path_.posix.join(pkg.path, 'package.json');
         let manifestContent;
@@ -44991,28 +45090,74 @@ async function runWithEffects(eff) {
         const next = computeNextVersion(current, today);
         const updated = writeVersion(manifestContent, next);
         await eff.writeFile(manifestPath, updated);
-        updates.push({ pkgPath: pkg.path, manifestPath, from: current, to: next });
+        updates.push({
+            pkgPath: pkg.path,
+            manifestPath,
+            from: current,
+            to: next,
+            contents: updated,
+        });
     }
-    await eff.configureIdentity(inputs.appId);
-    const message = formatCommitMessage(updates);
-    const remoteUrl = `https://x-access-token:${token}@github.com/${ctx.owner}/${ctx.repo}.git`;
-    await eff.commitAndPush(updates.map((u) => u.manifestPath), message, remoteUrl, ctx.branch, async () => {
-        for (const u of updates) {
-            const fresh = await eff.readFile(u.manifestPath);
-            const cur = readVersion(fresh);
-            const next = computeNextVersion(cur, today);
-            const out = writeVersion(fresh, next);
-            await eff.writeFile(u.manifestPath, out);
-            u.from = cur;
-            u.to = next;
+    let expectedHeadOid = ctx.sha;
+    let attempt = 0;
+    let lastErr = null;
+    while (attempt < MAX_COMMIT_ATTEMPTS) {
+        attempt++;
+        try {
+            const message = formatCommitMessage(updates);
+            await eff.createSignedCommit({
+                token,
+                owner: ctx.owner,
+                repo: ctx.repo,
+                branch: ctx.branch,
+                expectedHeadOid,
+                headline: message.headline,
+                body: message.body,
+                additions: updates.map((u) => ({ path: u.manifestPath, contents: u.contents })),
+            });
+            lastErr = null;
+            break;
         }
-    });
+        catch (err) {
+            lastErr = err;
+            if (!(err instanceof CommitConflictError))
+                throw err;
+            if (attempt >= MAX_COMMIT_ATTEMPTS)
+                break;
+            eff.log(`commit conflict on attempt ${attempt}; refreshing branch state and retrying`);
+            expectedHeadOid = await eff.getBranchHeadOid(token, ctx.owner, ctx.repo, ctx.branch);
+            today = formatToday(eff.now(), config.timezone);
+            const refreshed = [];
+            for (const u of updates) {
+                const fresh = await eff.getRemoteFileContents(token, ctx.owner, ctx.repo, u.manifestPath, expectedHeadOid);
+                const cur = readVersion(fresh);
+                const next = computeNextVersion(cur, today);
+                const updated = writeVersion(fresh, next);
+                // Keep the local workspace in sync so any subsequent local read sees the
+                // version we are about to commit. This is best-effort — the commit
+                // itself uses the in-memory `contents`.
+                await eff.writeFile(u.manifestPath, updated);
+                refreshed.push({
+                    pkgPath: u.pkgPath,
+                    manifestPath: u.manifestPath,
+                    from: cur,
+                    to: next,
+                    contents: updated,
+                });
+            }
+            updates = refreshed;
+        }
+    }
+    if (lastErr) {
+        throw new Error(`failed to push bump commit after ${MAX_COMMIT_ATTEMPTS} attempts: ${lastErr.message}`);
+    }
     eff.log(`bumped ${updates.length} package(s):\n` +
         updates.map((u) => `  ${u.pkgPath}: ${u.from ?? '(none)'} -> ${u.to}`).join('\n'));
 }
 function formatCommitMessage(updates) {
+    const headline = 'chore(release): bump versions [skip ci]';
     const body = updates.map((u) => `- ${u.pkgPath}: ${u.from ?? '(none)'} -> ${u.to}`).join('\n');
-    return `chore(release): bump versions [skip ci]\n\n${body}`;
+    return { headline, body };
 }
 /* istanbul ignore next: pure dependency-injection wiring; runWithEffects is the testable seam */
 async function run() {
@@ -45049,16 +45194,15 @@ async function run() {
                 const oc = new dist_src_Octokit({ auth: token });
                 return getLabelsForCommit({ octokit: oc, owner, repo, sha });
             },
-            configureIdentity: (appId) => configureGitIdentity({ appId, exec }),
-            commitAndPush: (files, message, remoteUrl, branch, onRetry) => commitAndPush({
-                files,
-                message,
-                remoteUrl,
-                branch,
-                exec,
-                maxRetries: 3,
-                onRetry,
-            }),
+            createSignedCommit: (params) => createSignedCommit(params),
+            getBranchHeadOid: (token, owner, repo, branch) => {
+                const oc = new dist_src_Octokit({ auth: token });
+                return getBranchHeadOid({ octokit: oc, owner, repo, branch });
+            },
+            getRemoteFileContents: (token, owner, repo, filePath, ref) => {
+                const oc = new dist_src_Octokit({ auth: token });
+                return getFileContents({ octokit: oc, owner, repo, path: filePath, ref });
+            },
             now: () => new Date(),
             setSecret: (s) => lib_core.setSecret(s),
             log: (m) => lib_core.info(m),
