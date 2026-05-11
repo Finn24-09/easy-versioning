@@ -58,4 +58,24 @@ describe('mintInstallationToken', () => {
       })
     ).rejects.toThrow(/not installed/i);
   });
+
+  it('rethrows non-404 errors from the installation lookup', async () => {
+    const auth = jest.fn().mockResolvedValueOnce({ type: 'app', token: 'jwt' });
+    createAppAuth.mockReturnValue(auth);
+    const fakeOctokitForApp = {
+      request: jest
+        .fn()
+        .mockRejectedValue(Object.assign(new Error('boom'), { status: 500 })),
+    };
+
+    await expect(
+      mintInstallationToken({
+        appId: 1,
+        privateKey: 'pk',
+        owner: 'octocat',
+        repo: 'hello',
+        __octokitFactory: () => fakeOctokitForApp,
+      })
+    ).rejects.toThrow(/boom/);
+  });
 });

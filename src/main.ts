@@ -140,6 +140,7 @@ function formatCommitMessage(updates: Array<{ pkgPath: string; from: string | un
   return `chore(release): bump versions [skip ci]\n\n${body}`;
 }
 
+/* istanbul ignore next: pure dependency-injection wiring; runWithEffects is the testable seam */
 export async function run(): Promise<void> {
   try {
     const exec = async (cmd: string, args: string[]) => {

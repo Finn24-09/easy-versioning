@@ -34465,6 +34465,7 @@ function formatCommitMessage(updates) {
     const body = updates.map((u) => `- ${u.pkgPath}: ${u.from ?? '(none)'} -> ${u.to}`).join('\n');
     return `chore(release): bump versions [skip ci]\n\n${body}`;
 }
+/* istanbul ignore next: pure dependency-injection wiring; runWithEffects is the testable seam */
 async function run() {
     try {
         const exec = async (cmd, args) => {

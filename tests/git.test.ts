@@ -97,4 +97,32 @@ describe('commitAndPush', () => {
       })
     ).rejects.toThrow(/push failed/i);
   });
+
+  it('throws when git add fails', async () => {
+    const { exec } = makeExec([{ exitCode: 1 }]);
+    await expect(
+      commitAndPush({
+        files: ['p.json'],
+        message: 'm',
+        remoteUrl: 'u',
+        branch: 'main',
+        exec,
+        maxRetries: 1,
+      })
+    ).rejects.toThrow(/git add failed/i);
+  });
+
+  it('throws when git commit fails', async () => {
+    const { exec } = makeExec([{}, { exitCode: 1 }]);
+    await expect(
+      commitAndPush({
+        files: ['p.json'],
+        message: 'm',
+        remoteUrl: 'u',
+        branch: 'main',
+        exec,
+        maxRetries: 1,
+      })
+    ).rejects.toThrow(/git commit failed/i);
+  });
 });
