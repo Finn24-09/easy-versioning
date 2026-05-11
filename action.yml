@@ -1,0 +1,26 @@
+name: easy-versioning
+description: Auto-bump npm package versions on PR merge using Calendar Versioning (CalVer).
+author: easy-versioning maintainers
+branding:
+  icon: tag
+  color: blue
+
+inputs:
+  app-id:
+    description: |
+      The numeric ID of your easy-versioning GitHub App. Store as a repo or org secret.
+    required: true
+  private-key:
+    description: |
+      The PEM-encoded RSA private key for your easy-versioning GitHub App. Store as
+      a repo or org secret.
+    required: true
+  config-path:
+    description: |
+      Path to the easy-versioning config file, relative to the repo root.
+    required: false
+    default: .github/easy-versioning.yml
+
+runs:
+  using: node20
+  main: dist/index.js
