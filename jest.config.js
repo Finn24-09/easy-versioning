@@ -12,5 +12,8 @@ module.exports = {
     }
   },
   clearMocks: true,
-  verbose: false
+  verbose: false,
+  moduleNameMapper: {
+    '^@octokit/rest$': '<rootDir>/tests/__mocks__/@octokit/rest.ts',
+  },
 };
