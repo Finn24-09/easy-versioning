@@ -63,6 +63,20 @@ requirements, so this only works if the App's commits should still go through
 status checks. (Most teams find the "all bypassed" model acceptable for an
 auto-versioning bot whose commits only modify `package.json`.)
 
+## Commit signing and bot attribution
+
+Bump commits are created via GitHub's GraphQL `createCommitOnBranch` mutation,
+authenticated with the App's short-lived installation token. As a result:
+
+- Each commit is **Verified** (signed by GitHub on the App's behalf). No
+  long-lived GPG/SSH signing key needs to be configured or rotated.
+- The author and committer are set to the App's bot identity by GitHub. The
+  bot name and avatar follow whatever slug your installation registered the
+  App under (e.g. `easy-versioning-myorg[bot]`), with a clickable link to the
+  bot account and the App's icon.
+- The Action does not run `git config user.name` / `user.email` or
+  `git push` — there is no local identity to misconfigure.
+
 ## What the Action does NOT do
 
 - Does not read your source code beyond what's needed to compute changed files.
@@ -70,6 +84,8 @@ auto-versioning bot whose commits only modify `package.json`.)
 - Does not depend on any third-party service.
 - Does not write to any path other than the configured packages' `package.json`
   files.
+- Does not perform local `git commit` / `git push` for the bump — commits are
+  created server-side via GitHub's GraphQL API.
 
 ## Reporting vulnerabilities
 

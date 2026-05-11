@@ -30,8 +30,10 @@ Auto-bump npm package versions on PR merge using Calendar Versioning (CalVer).
 - For each `packages[]` entry in your config, if any changed file matches its
   `triggers` globs (and isn't in the global `ignore` list), the action bumps
   that package's version.
-- The bump commit is authored by `easy-versioning[bot]` and includes `[skip ci]`
-  so it doesn't trigger another CI run.
+- The bump commit is created via GitHub's GraphQL `createCommitOnBranch`
+  mutation, so it shows up as **Verified** (signed by GitHub) and is properly
+  attributed to your App's bot identity. The commit message includes
+  `[skip ci]` so it doesn't trigger another CI run.
 - Same-day collisions add a numeric `-N` suffix that increments per same-day
   bump (`26.5.10`, `26.5.10-1`, `26.5.10-2`...).
 
