@@ -7,7 +7,8 @@ import { readVersion, writeVersion } from './packageJson';
 import { computeNextVersion, formatToday } from './version';
 import { mintInstallationToken } from './githubApp';
 import { getLabelsForCommit } from './githubApi';
-import { configureGitIdentity, commitAndPush } from './git';
+import { getBranchHeadOid, getFileContents } from './githubRef';
+import { createSignedCommit, CommitConflictError, FileAddition } from './githubCommit';
 import { Octokit } from '@octokit/rest';
 import * as core from '@actions/core';
 import * as actionsExec from '@actions/exec';
@@ -22,6 +23,17 @@ export interface MainContext {
   commitCount: number;
 }
 
+export interface CreateSignedCommitInput {
+  token: string;
+  owner: string;
+  repo: string;
+  branch: string;
+  expectedHeadOid: string;
+  headline: string;
+  body?: string;
+  additions: FileAddition[];
+}
+
 export interface MainEffects {
   getInput: (k: string) => string | undefined;
   getContext: () => MainContext;
@@ -31,18 +43,29 @@ export interface MainEffects {
   detectMergeParent: () => Promise<boolean>;
   mintToken: (appId: number, key: string, owner: string, repo: string) => Promise<string>;
   getLabels: (token: string, owner: string, repo: string, sha: string) => Promise<string[]>;
-  configureIdentity: (appId: number) => Promise<void>;
-  commitAndPush: (
-    files: string[],
-    message: string,
-    remoteUrl: string,
-    branch: string,
-    onRetry: () => Promise<void>
-  ) => Promise<void>;
+  createSignedCommit: (params: CreateSignedCommitInput) => Promise<{ commitSha: string }>;
+  getBranchHeadOid: (token: string, owner: string, repo: string, branch: string) => Promise<string>;
+  getRemoteFileContents: (
+    token: string,
+    owner: string,
+    repo: string,
+    filePath: string,
+    ref: string
+  ) => Promise<string>;
   now: () => Date;
   setSecret: (s: string) => void;
   log: (msg: string) => void;
 }
+
+interface PendingUpdate {
+  pkgPath: string;
+  manifestPath: string;
+  from: string | undefined;
+  to: string;
+  contents: string;
+}
+
+const MAX_COMMIT_ATTEMPTS = 4;
 
 function isENOENT(err: unknown): boolean {
   return (err as { code?: string })?.code === 'ENOENT';
@@ -86,13 +109,8 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
     return;
   }
 
-  const today = formatToday(eff.now(), config.timezone);
-  const updates: Array<{
-    pkgPath: string;
-    manifestPath: string;
-    from: string | undefined;
-    to: string;
-  }> = [];
+  let today = formatToday(eff.now(), config.timezone);
+  let updates: PendingUpdate[] = [];
 
   for (const pkg of toBump) {
     const manifestPath = path.posix.join(pkg.path, 'package.json');
@@ -111,30 +129,76 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
     const next = computeNextVersion(current, today);
     const updated = writeVersion(manifestContent, next);
     await eff.writeFile(manifestPath, updated);
-    updates.push({ pkgPath: pkg.path, manifestPath, from: current, to: next });
+    updates.push({
+      pkgPath: pkg.path,
+      manifestPath,
+      from: current,
+      to: next,
+      contents: updated,
+    });
   }
 
-  await eff.configureIdentity(inputs.appId);
-  const message = formatCommitMessage(updates);
-  const remoteUrl = `https://x-access-token:${token}@github.com/${ctx.owner}/${ctx.repo}.git`;
+  let expectedHeadOid = ctx.sha;
+  let attempt = 0;
+  let lastErr: unknown = null;
 
-  await eff.commitAndPush(
-    updates.map((u) => u.manifestPath),
-    message,
-    remoteUrl,
-    ctx.branch,
-    async () => {
+  while (attempt < MAX_COMMIT_ATTEMPTS) {
+    attempt++;
+    try {
+      const message = formatCommitMessage(updates);
+      await eff.createSignedCommit({
+        token,
+        owner: ctx.owner,
+        repo: ctx.repo,
+        branch: ctx.branch,
+        expectedHeadOid,
+        headline: message.headline,
+        body: message.body,
+        additions: updates.map((u) => ({ path: u.manifestPath, contents: u.contents })),
+      });
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (!(err instanceof CommitConflictError)) throw err;
+      if (attempt >= MAX_COMMIT_ATTEMPTS) break;
+      eff.log(`commit conflict on attempt ${attempt}; refreshing branch state and retrying`);
+
+      expectedHeadOid = await eff.getBranchHeadOid(token, ctx.owner, ctx.repo, ctx.branch);
+      today = formatToday(eff.now(), config.timezone);
+      const refreshed: PendingUpdate[] = [];
       for (const u of updates) {
-        const fresh = await eff.readFile(u.manifestPath);
+        const fresh = await eff.getRemoteFileContents(
+          token,
+          ctx.owner,
+          ctx.repo,
+          u.manifestPath,
+          expectedHeadOid
+        );
         const cur = readVersion(fresh);
         const next = computeNextVersion(cur, today);
-        const out = writeVersion(fresh, next);
-        await eff.writeFile(u.manifestPath, out);
-        u.from = cur;
-        u.to = next;
+        const updated = writeVersion(fresh, next);
+        // Keep the local workspace in sync so any subsequent local read sees the
+        // version we are about to commit. This is best-effort — the commit
+        // itself uses the in-memory `contents`.
+        await eff.writeFile(u.manifestPath, updated);
+        refreshed.push({
+          pkgPath: u.pkgPath,
+          manifestPath: u.manifestPath,
+          from: cur,
+          to: next,
+          contents: updated,
+        });
       }
+      updates = refreshed;
     }
-  );
+  }
+
+  if (lastErr) {
+    throw new Error(
+      `failed to push bump commit after ${MAX_COMMIT_ATTEMPTS} attempts: ${(lastErr as Error).message}`
+    );
+  }
 
   eff.log(
     `bumped ${updates.length} package(s):\n` +
@@ -144,9 +208,13 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
 
 function formatCommitMessage(
   updates: Array<{ pkgPath: string; from: string | undefined; to: string }>
-): string {
+): {
+  headline: string;
+  body: string;
+} {
+  const headline = 'chore(release): bump versions [skip ci]';
   const body = updates.map((u) => `- ${u.pkgPath}: ${u.from ?? '(none)'} -> ${u.to}`).join('\n');
-  return `chore(release): bump versions [skip ci]\n\n${body}`;
+  return { headline, body };
 }
 
 /* istanbul ignore next: pure dependency-injection wiring; runWithEffects is the testable seam */
@@ -186,17 +254,15 @@ export async function run(): Promise<void> {
         const oc = new Octokit({ auth: token });
         return getLabelsForCommit({ octokit: oc, owner, repo, sha });
       },
-      configureIdentity: (appId) => configureGitIdentity({ appId, exec }),
-      commitAndPush: (files, message, remoteUrl, branch, onRetry) =>
-        commitAndPush({
-          files,
-          message,
-          remoteUrl,
-          branch,
-          exec,
-          maxRetries: 3,
-          onRetry,
-        }),
+      createSignedCommit: (params) => createSignedCommit(params),
+      getBranchHeadOid: (token, owner, repo, branch) => {
+        const oc = new Octokit({ auth: token });
+        return getBranchHeadOid({ octokit: oc, owner, repo, branch });
+      },
+      getRemoteFileContents: (token, owner, repo, filePath, ref) => {
+        const oc = new Octokit({ auth: token });
+        return getFileContents({ octokit: oc, owner, repo, path: filePath, ref });
+      },
       now: () => new Date(),
       setSecret: (s) => core.setSecret(s),
       log: (m) => core.info(m),

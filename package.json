@@ -1,6 +1,6 @@
 {
   "name": "easy-versioning",
-  "version": "0.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Auto-bump npm package versions on PR merge using Calendar Versioning",
   "license": "MIT",
@@ -22,6 +22,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.0",
     "@octokit/auth-app": "^7.1.0",
+    "@octokit/graphql": "^8.0.0",
     "@octokit/rest": "^21.0.0",
     "js-yaml": "^4.1.0",
     "minimatch": "^10.0.0"
