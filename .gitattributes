@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Force LF line endings in working tree on all platforms so bundled
+# build artifacts (e.g. ncc-produced files in dist/) are byte-stable
+# between Windows local dev and Linux CI.
+* text=auto eol=lf
+
+# Mark precompiled action bundle as generated so GitHub linguist
+# collapses it in PR diffs (official linguist convention).
+dist/* linguist-generated=true
