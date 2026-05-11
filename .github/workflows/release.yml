@@ -1,0 +1,32 @@
+name: release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  retag-major:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute major tag
+        id: major
+        run: |
+          tag="${GITHUB_REF##refs/tags/}"
+          major="${tag%%.*}"
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+
+      - name: Retag major
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -fa "${{ steps.major.outputs.major }}" -m "${{ steps.major.outputs.major }}"
+          git push -f origin "${{ steps.major.outputs.major }}"
