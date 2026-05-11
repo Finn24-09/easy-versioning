@@ -1,0 +1,37 @@
+# Save this file as .github/workflows/easy-versioning.yml in your repo.
+#
+# Setup checklist:
+#   1. Install the easy-versioning GitHub App on this repo.
+#   2. Add EASY_VERSIONING_APP_ID and EASY_VERSIONING_PRIVATE_KEY as repo
+#      or organization secrets.
+#   3. If your default branch has a ruleset blocking direct pushes, add
+#      the easy-versioning App to its bypass actors list.
+#   4. (Optional) Add a .github/easy-versioning.yml config file. If absent,
+#      the root package.json is bumped on every push.
+
+name: easy-versioning
+
+on:
+  push:
+    branches: [main]   # Change to your default branch if not main.
+
+concurrency:
+  group: easy-versioning-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}        # The action does not use the default GITHUB_TOKEN.
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2     # Need HEAD~1 for the diff.
+          persist-credentials: false
+
+      - uses: <OWNER>/easy-versioning@v1
+        with:
+          app-id: ${{ secrets.EASY_VERSIONING_APP_ID }}
+          private-key: ${{ secrets.EASY_VERSIONING_PRIVATE_KEY }}
+          # config-path: .github/easy-versioning.yml   # default

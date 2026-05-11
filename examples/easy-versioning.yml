@@ -1,0 +1,32 @@
+# Save this file as .github/easy-versioning.yml in your repo.
+#
+# All keys except `packages` are optional; defaults shown as comments.
+
+# skip-label: skip-release   # Adding this label to a PR skips its bump.
+# timezone: UTC              # IANA timezone for the YY.M.D date computation.
+
+# Globs for paths that should NEVER trigger a bump, even if they match a
+# package's triggers. If every changed file matches one of these globs, no
+# package gets bumped.
+ignore:
+  - '**/*.md'
+  - 'docs/**'
+  - '.github/**'
+
+# One entry per package to track. Each package has a `path` (the directory
+# containing its package.json) and `triggers` (globs that, if matched by any
+# changed file, cause this package to be bumped).
+packages:
+  - path: packages/ui
+    triggers:
+      - packages/ui/**
+      - packages/shared/**     # ui depends on shared
+
+  - path: packages/api
+    triggers:
+      - packages/api/**
+      - packages/shared/**
+
+  - path: packages/cli
+    triggers:
+      - packages/cli/**
