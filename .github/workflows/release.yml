@@ -3,6 +3,12 @@ name: release
 on:
   push:
     tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      source-tag:
+        description: 'Existing version tag to retag the major from (e.g. v1.2.3). Required for manual runs.'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,22 +17,31 @@ jobs:
   retag-major:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Compute major tag
-        id: major
+      - name: Resolve source and major tag
+        id: src
         run: |
-          tag="${GITHUB_REF##refs/tags/}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.source-tag }}"
+          else
+            tag="${GITHUB_REF##refs/tags/}"
+          fi
+          case "$tag" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::Tag '$tag' does not match v<major>.<minor>.<patch>" ; exit 1 ;;
+          esac
           major="${tag%%.*}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "major=$major" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.src.outputs.tag }}
+          fetch-depth: 0
+          persist-credentials: true
+
       - name: Retag major
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -fa "${{ steps.major.outputs.major }}" -m "${{ steps.major.outputs.major }}"
-          git push -f origin "${{ steps.major.outputs.major }}"
+          git tag -fa "${{ steps.src.outputs.major }}" -m "${{ steps.src.outputs.major }}"
+          git push --force origin "${{ steps.src.outputs.major }}"

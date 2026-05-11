@@ -54,9 +54,12 @@ on many repos: it centralizes management and key rotation.
 
 ### 2. Add the workflow file
 
-Copy `examples/workflow.yml` to `.github/workflows/easy-versioning.yml`. Replace
-`<OWNER>/easy-versioning` with the actual owner/repo and `@v1` with your pinned
-version (a SHA is recommended for security: `@<full-40-char-sha>`).
+Copy `examples/workflow.yml` to `.github/workflows/easy-versioning.yml`. The
+example pins `Finn24-09/easy-versioning@v1` — the floating major-version tag,
+which receives non-breaking patch and minor updates within the v1 line. For
+maximum supply-chain hardening, pin to a full 40-character commit SHA instead:
+`Finn24-09/easy-versioning@<sha>` (see GitHub's [hardening guide for
+third-party actions](https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#using-third-party-actions)).
 
 ### 3. Add the config file (optional but recommended)
 

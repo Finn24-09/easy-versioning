@@ -30,7 +30,10 @@ jobs:
           fetch-depth: 2     # Need HEAD~1 for the diff.
           persist-credentials: false
 
-      - uses: <OWNER>/easy-versioning@v1
+      # Pin to @v1 for automatic patch/minor updates within the v1 major line.
+      # For maximum supply-chain hardening, pin to a full 40-char commit SHA
+      # instead, e.g. Finn24-09/easy-versioning@<sha>.
+      - uses: Finn24-09/easy-versioning@v1
         with:
           app-id: ${{ secrets.EASY_VERSIONING_APP_ID }}
           private-key: ${{ secrets.EASY_VERSIONING_PRIVATE_KEY }}
