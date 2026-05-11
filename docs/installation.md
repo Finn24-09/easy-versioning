@@ -18,7 +18,11 @@ You only do this once per organization.
    use the App Manifest flow at the URL below to pre-fill the form:
    `https://github.com/organizations/<YOUR_ORG>/settings/apps/new?manifest=<URL-encoded JSON of docs/app-manifest.json>`
 2. Set the App name to something like `easy-versioning-<ORG>` (must be unique on
-   GitHub).
+   GitHub). This name becomes the slug of the App's bot identity — bump commits
+   are attributed to `<your-slug>[bot]` (e.g. `easy-versioning-myorg[bot]`)
+   with its avatar and a clickable link to the bot account. The slug only
+   affects display; the Action behaviour is identical regardless of the name
+   you pick.
 3. **Webhooks: disabled.** This App does not receive events.
 4. **Permissions** (must match exactly):
    - Repository permissions:
