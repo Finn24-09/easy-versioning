@@ -19,9 +19,9 @@ describe('parseInputs', () => {
   });
 
   it('throws when app-id is not a number', () => {
-    expect(() =>
-      parseInputs({ 'app-id': 'notanumber', 'private-key': 'pk' })
-    ).toThrow(/app-id.*number/i);
+    expect(() => parseInputs({ 'app-id': 'notanumber', 'private-key': 'pk' })).toThrow(
+      /app-id.*number/i
+    );
   });
 
   it('uses default config-path', () => {

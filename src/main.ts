@@ -87,7 +87,12 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
   }
 
   const today = formatToday(eff.now(), config.timezone);
-  const updates: Array<{ pkgPath: string; manifestPath: string; from: string | undefined; to: string }> = [];
+  const updates: Array<{
+    pkgPath: string;
+    manifestPath: string;
+    from: string | undefined;
+    to: string;
+  }> = [];
 
   for (const pkg of toBump) {
     const manifestPath = path.posix.join(pkg.path, 'package.json');
@@ -96,7 +101,9 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
       manifestContent = await eff.readFile(manifestPath);
     } catch (err) {
       if (isENOENT(err)) {
-        throw new Error(`config references package at '${pkg.path}' but ${manifestPath} does not exist`);
+        throw new Error(
+          `config references package at '${pkg.path}' but ${manifestPath} does not exist`
+        );
       }
       throw err;
     }
@@ -135,7 +142,9 @@ export async function runWithEffects(eff: MainEffects): Promise<void> {
   );
 }
 
-function formatCommitMessage(updates: Array<{ pkgPath: string; from: string | undefined; to: string }>): string {
+function formatCommitMessage(
+  updates: Array<{ pkgPath: string; from: string | undefined; to: string }>
+): string {
   const body = updates.map((u) => `- ${u.pkgPath}: ${u.from ?? '(none)'} -> ${u.to}`).join('\n');
   return `chore(release): bump versions [skip ci]\n\n${body}`;
 }

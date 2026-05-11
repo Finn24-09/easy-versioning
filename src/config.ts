@@ -79,8 +79,7 @@ export function parseConfig(input: string | undefined): EasyVersioningConfig {
   });
 
   // Validate timezone if provided
-  const timezone =
-    typeof obj['timezone'] === 'string' ? obj['timezone'] : DEFAULT_CONFIG.timezone;
+  const timezone = typeof obj['timezone'] === 'string' ? obj['timezone'] : DEFAULT_CONFIG.timezone;
 
   if (typeof obj['timezone'] === 'string') {
     try {
@@ -91,9 +90,7 @@ export function parseConfig(input: string | undefined): EasyVersioningConfig {
   }
 
   // Validate ignore if provided
-  const ignore = Array.isArray(obj['ignore'])
-    ? (obj['ignore'] as string[])
-    : DEFAULT_CONFIG.ignore;
+  const ignore = Array.isArray(obj['ignore']) ? (obj['ignore'] as string[]) : DEFAULT_CONFIG.ignore;
 
   // skipLabel (yaml key is skip-label)
   const skipLabel =

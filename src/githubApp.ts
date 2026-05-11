@@ -18,8 +18,7 @@ export async function mintInstallationToken(params: MintTokenParams): Promise<st
   const appAuthResult = (await auth({ type: 'app' })) as { type: 'app'; token: string };
 
   const octokit =
-    params.__octokitFactory?.(appAuthResult) ??
-    new Octokit({ auth: appAuthResult.token });
+    params.__octokitFactory?.(appAuthResult) ?? new Octokit({ auth: appAuthResult.token });
 
   let installationId: number;
   try {

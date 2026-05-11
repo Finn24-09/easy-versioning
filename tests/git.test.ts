@@ -17,12 +17,7 @@ describe('configureGitIdentity', () => {
     await configureGitIdentity({ appId: 12345, exec });
     expect(calls).toEqual([
       ['git', 'config', 'user.name', 'easy-versioning[bot]'],
-      [
-        'git',
-        'config',
-        'user.email',
-        '12345+easy-versioning[bot]@users.noreply.github.com',
-      ],
+      ['git', 'config', 'user.email', '12345+easy-versioning[bot]@users.noreply.github.com'],
     ]);
   });
 });
@@ -39,12 +34,7 @@ describe('commitAndPush', () => {
       maxRetries: 3,
     });
     expect(calls[0]).toEqual(['git', 'add', '--', 'package.json']);
-    expect(calls[1]).toEqual([
-      'git',
-      'commit',
-      '-m',
-      'chore(release): bump [skip ci]',
-    ]);
+    expect(calls[1]).toEqual(['git', 'commit', '-m', 'chore(release): bump [skip ci]']);
     expect(calls[2][0]).toEqual('git');
     expect(calls[2][1]).toEqual('push');
     expect(calls[2][2]).toEqual('https://x-access-token:TOKEN@github.com/octocat/repo.git');
@@ -81,9 +71,19 @@ describe('commitAndPush', () => {
 
   it('throws after exceeding maxRetries', async () => {
     const { exec } = makeExec([
-      {}, {}, { exitCode: 1, stdout: 'rejected' },
-      {}, {}, {}, {}, { exitCode: 1, stdout: 'rejected' },
-      {}, {}, {}, {}, { exitCode: 1, stdout: 'rejected' },
+      {},
+      {},
+      { exitCode: 1, stdout: 'rejected' },
+      {},
+      {},
+      {},
+      {},
+      { exitCode: 1, stdout: 'rejected' },
+      {},
+      {},
+      {},
+      {},
+      { exitCode: 1, stdout: 'rejected' },
     ]);
     await expect(
       commitAndPush({

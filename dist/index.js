@@ -34053,7 +34053,10 @@ async function detectChangedFiles(params) {
     if (res.exitCode !== 0) {
         throw new Error(`git diff failed with exit code ${res.exitCode}`);
     }
-    return res.stdout.split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+    return res.stdout
+        .split('\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
 }
 async function detectMergeParent(exec) {
     const res = await exec('git', ['rev-list', '--parents', '-n', '1', 'HEAD']);
@@ -34181,9 +34184,7 @@ function parseConfig(input) {
         }
     }
     // Validate ignore if provided
-    const ignore = Array.isArray(obj['ignore'])
-        ? obj['ignore']
-        : exports.DEFAULT_CONFIG.ignore;
+    const ignore = Array.isArray(obj['ignore']) ? obj['ignore'] : exports.DEFAULT_CONFIG.ignore;
     // skipLabel (yaml key is skip-label)
     const skipLabel = typeof obj['skip-label'] === 'string' ? obj['skip-label'] : exports.DEFAULT_CONFIG.skipLabel;
     return {
@@ -34231,11 +34232,7 @@ async function commitAndPush(params) {
         if (commitRes.exitCode !== 0) {
             throw new Error(`git commit failed with exit code ${commitRes.exitCode}`);
         }
-        const pushRes = await params.exec('git', [
-            'push',
-            params.remoteUrl,
-            `HEAD:${params.branch}`,
-        ]);
+        const pushRes = await params.exec('git', ['push', params.remoteUrl, `HEAD:${params.branch}`]);
         if (pushRes.exitCode === 0)
             return;
         lastErr = new Error(`git push failed: ${pushRes.stdout}`);
@@ -34255,7 +34252,11 @@ async function commitAndPush(params) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getLabelsForCommit = getLabelsForCommit;
 async function getLabelsForCommit(params) {
-    const res = await params.octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', { owner: params.owner, repo: params.repo, commit_sha: params.sha });
+    const res = await params.octokit.request('GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls', {
+        owner: params.owner,
+        repo: params.repo,
+        commit_sha: params.sha,
+    });
     const all = new Set();
     for (const pr of res.data) {
         for (const l of pr.labels)
@@ -34279,8 +34280,7 @@ const rest_1 = __nccwpck_require__(5545);
 async function mintInstallationToken(params) {
     const auth = (0, auth_app_1.createAppAuth)({ appId: params.appId, privateKey: params.privateKey });
     const appAuthResult = (await auth({ type: 'app' }));
-    const octokit = params.__octokitFactory?.(appAuthResult) ??
-        new rest_1.Octokit({ auth: appAuthResult.token });
+    const octokit = params.__octokitFactory?.(appAuthResult) ?? new rest_1.Octokit({ auth: appAuthResult.token });
     let installationId;
     try {
         const res = await octokit.request('GET /repos/{owner}/{repo}/installation', {

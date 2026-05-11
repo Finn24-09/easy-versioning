@@ -62,9 +62,7 @@ packages:
   });
 
   it('throws when a package has no path', () => {
-    expect(() =>
-      parseConfig(`packages:\n  - triggers: ['**/*']`)
-    ).toThrow(/path/);
+    expect(() => parseConfig(`packages:\n  - triggers: ['**/*']`)).toThrow(/path/);
   });
 
   it('throws when a package has no triggers', () => {
@@ -72,9 +70,7 @@ packages:
   });
 
   it('throws when a package has empty triggers', () => {
-    expect(() =>
-      parseConfig(`packages:\n  - path: foo\n    triggers: []`)
-    ).toThrow(/at least one/);
+    expect(() => parseConfig(`packages:\n  - path: foo\n    triggers: []`)).toThrow(/at least one/);
   });
 
   it('throws on invalid timezone', () => {

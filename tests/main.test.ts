@@ -113,7 +113,8 @@ describe('runWithEffects: same-day collision', () => {
     const writeFile = jest.fn(async () => undefined);
     const eff = makeEffects({
       readFile: async (p) => {
-        if (p === '.github/easy-versioning.yml') throw Object.assign(new Error(), { code: 'ENOENT' });
+        if (p === '.github/easy-versioning.yml')
+          throw Object.assign(new Error(), { code: 'ENOENT' });
         if (p === 'package.json') return '{"version":"26.5.10"}';
         throw new Error('unexpected: ' + p);
       },

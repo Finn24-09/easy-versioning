@@ -43,18 +43,12 @@ export async function commitAndPush(params: CommitAndPushParams): Promise<void> 
     if (commitRes.exitCode !== 0) {
       throw new Error(`git commit failed with exit code ${commitRes.exitCode}`);
     }
-    const pushRes = await params.exec('git', [
-      'push',
-      params.remoteUrl,
-      `HEAD:${params.branch}`,
-    ]);
+    const pushRes = await params.exec('git', ['push', params.remoteUrl, `HEAD:${params.branch}`]);
     if (pushRes.exitCode === 0) return;
 
     lastErr = new Error(`git push failed: ${pushRes.stdout}`);
     attempt++;
   }
 
-  throw new Error(
-    `git push failed after ${params.maxRetries + 1} attempts: ${lastErr?.message}`,
-  );
+  throw new Error(`git push failed after ${params.maxRetries + 1} attempts: ${lastErr?.message}`);
 }

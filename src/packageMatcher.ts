@@ -14,7 +14,5 @@ export function selectPackagesToBump(
   const relevantFiles = changedFiles.filter((f) => !matchesAny(f, config.ignore));
   if (relevantFiles.length === 0) return [];
 
-  return config.packages.filter((pkg) =>
-    relevantFiles.some((f) => matchesAny(f, pkg.triggers))
-  );
+  return config.packages.filter((pkg) => relevantFiles.some((f) => matchesAny(f, pkg.triggers)));
 }

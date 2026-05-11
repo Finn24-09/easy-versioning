@@ -42,9 +42,9 @@ describe('detectChangedFiles', () => {
 
   it('throws if commitCount is zero', async () => {
     const exec = async () => ({ stdout: '', exitCode: 0 });
-    await expect(
-      detectChangedFiles({ commitCount: 0, mergeParent: false, exec })
-    ).rejects.toThrow(/commitCount/);
+    await expect(detectChangedFiles({ commitCount: 0, mergeParent: false, exec })).rejects.toThrow(
+      /commitCount/
+    );
   });
 });
 

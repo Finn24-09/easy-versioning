@@ -13,8 +13,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --no-error-on-unmatched-pattern",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "all": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build"
+    "all": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
     "@actions/core": "^1.11.0",

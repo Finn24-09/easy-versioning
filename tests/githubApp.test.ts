@@ -63,9 +63,7 @@ describe('mintInstallationToken', () => {
     const auth = jest.fn().mockResolvedValueOnce({ type: 'app', token: 'jwt' });
     createAppAuth.mockReturnValue(auth);
     const fakeOctokitForApp = {
-      request: jest
-        .fn()
-        .mockRejectedValue(Object.assign(new Error('boom'), { status: 500 })),
+      request: jest.fn().mockRejectedValue(Object.assign(new Error('boom'), { status: 500 })),
     };
 
     await expect(

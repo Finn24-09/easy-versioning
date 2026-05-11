@@ -20,7 +20,10 @@ export async function detectChangedFiles(params: DetectChangedFilesParams): Prom
   if (res.exitCode !== 0) {
     throw new Error(`git diff failed with exit code ${res.exitCode}`);
   }
-  return res.stdout.split('\n').map((s) => s.trim()).filter((s) => s.length > 0);
+  return res.stdout
+    .split('\n')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 export async function detectMergeParent(exec: ExecFn): Promise<boolean> {

@@ -62,6 +62,6 @@ export function computeNextVersion(current: string | undefined, today: string): 
 
   // cmp > 0: current date is in the future
   throw new Error(
-    `current version ${current} is dated in the future relative to today ${today}; refusing to bump backwards`,
+    `current version ${current} is dated in the future relative to today ${today}; refusing to bump backwards`
   );
 }
