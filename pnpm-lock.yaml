@@ -21,8 +21,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0
       '@octokit/graphql':
-        specifier: ^8.0.0
-        version: 8.2.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
@@ -479,10 +479,6 @@ packages:
 
   '@octokit/graphql@7.1.1':
     resolution: {integrity: sha512-3mkDltSfcDUoa176nlGoA32RGjeWjl3K7F/BwHwRMJUW/IteSa4bnSV8p2ThNkcIcZU2umkZWxwETSSCJf2Q7g==}
-    engines: {node: '>= 18'}
-
-  '@octokit/graphql@8.2.2':
-    resolution: {integrity: sha512-Yi8hcoqsrXGdt0yObxbebHXFOiUA+2v3n53epuOg1QUgOB6c4XzvisBNVXJSl8RYA5KrDuSL2yq9Qmqe5N0ryA==}
     engines: {node: '>= 18'}
 
   '@octokit/graphql@9.0.3':
@@ -2516,12 +2512,6 @@ snapshots:
       '@octokit/request': 8.4.1
       '@octokit/types': 13.10.0
       universal-user-agent: 6.0.1
-
-  '@octokit/graphql@8.2.2':
-    dependencies:
-      '@octokit/request': 9.2.4
-      '@octokit/types': 14.1.0
-      universal-user-agent: 7.0.3
 
   '@octokit/graphql@9.0.3':
     dependencies:
