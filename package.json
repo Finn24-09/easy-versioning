@@ -1,6 +1,6 @@
 {
   "name": "easy-versioning",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "description": "Auto-bump npm package versions on PR merge using Calendar Versioning",
   "license": "MIT",
