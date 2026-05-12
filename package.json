@@ -19,7 +19,7 @@
     "all": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run test && pnpm run build"
   },
   "dependencies": {
-    "@actions/core": "^1.11.0",
+    "@actions/core": "^3.0.1",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.0",
     "@octokit/auth-app": "^7.1.0",
