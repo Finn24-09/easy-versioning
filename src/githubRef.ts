@@ -50,9 +50,7 @@ export async function getFileContents(params: GetFileContentsParams): Promise<st
     ref: params.ref,
   });
   const data = res.data as
-    | { type?: string; encoding?: string; content?: string }
-    | Array<unknown>
-    | undefined;
+    { type?: string; encoding?: string; content?: string } | Array<unknown> | undefined;
   if (Array.isArray(data)) {
     throw new Error(`expected a file at ${params.path}, got a directory listing`);
   }
