@@ -24,7 +24,7 @@ updates:
           - "patch"
     # @actions/core (v2/v3), @actions/exec (v2/v3), and @actions/github (v9)
     # went ESM-only. @vercel/ncc@0.38 cannot bundle pure-ESM packages into the
-    # CommonJS dist/index.js entrypoint used by runs.using: node20 — bumping
+    # CommonJS dist/index.js entrypoint used by runs.using: node24 — bumping
     # them triggers ERR_REQUIRE_ESM at runtime. Drop these ignores once ncc
     # gains reliable ESM-input support or the bundler is replaced (e.g.
     # esbuild). See closed PRs #8, #11, and #13.
