@@ -9,6 +9,7 @@ This guide covers the **one-time setup** required for an organization plus the *
 - 🏢 A GitHub organization (or personal account) where you want to use easy-versioning.
 - 🔑 Admin access to that org (or your account) so you can register a GitHub App.
 - 🛠️ Admin access to each repo where you want to enable bumping (to set up secrets, the workflow, and rulesets).
+- 🏃 GitHub-hosted runners, or self-hosted runners on **v2.327.1 or newer** (the Action runs on Node 24, which older runners can't execute).
 
 ---
 

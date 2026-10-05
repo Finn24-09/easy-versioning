@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/Finn24-09/easy-versioning/actions/workflows/ci.yml/badge.svg)](https://github.com/Finn24-09/easy-versioning/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%E2%89%A520-brightgreen)](.nvmrc)
+[![Node](https://img.shields.io/badge/node-%E2%89%A524-brightgreen)](.nvmrc)
 
 </div>
 

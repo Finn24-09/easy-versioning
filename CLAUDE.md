@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A GitHub Action (`runs.using: node20`, entrypoint `dist/index.js`) that auto-bumps `package.json` versions on PR-merge pushes using CalVer (`YY.M.D`, with `-N` suffix on same-day collisions). It authenticates as a GitHub App, mints a short-lived installation token at runtime, and creates the bump commit via GitHub's GraphQL `createCommitOnBranch` so the commit shows up as **Verified** and attributed to the App's bot identity. There is no webhook server and no long-lived PAT.
+A GitHub Action (`runs.using: node24`, entrypoint `dist/index.js`) that auto-bumps `package.json` versions on PR-merge pushes using CalVer (`YY.M.D`, with `-N` suffix on same-day collisions). It authenticates as a GitHub App, mints a short-lived installation token at runtime, and creates the bump commit via GitHub's GraphQL `createCommitOnBranch` so the commit shows up as **Verified** and attributed to the App's bot identity. There is no webhook server and no long-lived PAT.
 
 Consumer-facing docs live in `README.md`, `docs/installation.md`, `docs/security.md`. `examples/workflow.yml` and `examples/easy-versioning.yml` are the canonical consumer setup.
 
 ## Commands
 
-Package manager is **pnpm 9.15.9** (pinned via `packageManager` field) and Node **>=20** (`.nvmrc`).
+Package manager is **pnpm 9.15.9** (pinned via `packageManager` field) and Node **>=24** (`.nvmrc`).
 
 | Task | Command |
 | --- | --- |
