@@ -29,6 +29,8 @@ Package manager is **pnpm 9.15.9** (pinned via `packageManager` field) and Node 
 
 The action's entrypoint is the precompiled bundle `dist/index.js` produced by `@vercel/ncc`. CI's last step (`.github/workflows/ci.yml`) runs `pnpm run build` and **fails the build if `dist/` has uncommitted changes**. Any time you edit anything under `src/`, run `pnpm run build` and commit the regenerated `dist/` along with the source change. `dist/*` is marked `linguist-generated` so it collapses in PR diffs.
 
+With the current tsconfig (`module: preserve`), ncc bundles ESM-only dependencies such as `@actions/*` v3+ into the CommonJS `dist/index.js`; don't switch the tsconfig to `module: commonjs`.
+
 `.gitattributes` forces `eol=lf` repo-wide so the bundled output is byte-stable between Windows local dev and Linux CI — do not let your editor convert to CRLF.
 
 ## Architecture
@@ -70,13 +72,13 @@ Server-side commits via `createCommitOnBranch` are GPG-signed by GitHub on the A
 
 ### Testing seams
 
-- ESM-only deps (`@octokit/rest`, `@octokit/graphql`) are mocked via `jest.config.js::moduleNameMapper` pointing at `tests/__mocks__/@octokit/*.ts`.
+- ESM-only deps (`@octokit/rest`, `@octokit/graphql`, `@actions/core`, `@actions/exec`, `@actions/github`) are mocked via `jest.config.js::moduleNameMapper` pointing at `tests/__mocks__/@octokit/*.ts` and `tests/__mocks__/@actions/*.ts`. The `@actions/*` stubs throw on any use, because only `run()` touches the real APIs.
 - `@octokit/auth-app` is mocked inline in test files that touch `githubApp.ts` (`jest.mock('@octokit/auth-app', ...)`).
 - `createSignedCommit` and `mintInstallationToken` accept hidden `__graphqlClient` / `__octokitFactory` parameters as test seams — prefer these over module-level mocks for unit tests of those modules.
 
 ### Coverage threshold
 
-`jest.config.js` enforces 80% branches/functions/lines/statements globally; `src/index.ts` is excluded from coverage. Don't drop this without a reason.
+`jest.config.js` sets an 80% branches/functions/lines/statements global threshold; `src/index.ts` is excluded from coverage. `pnpm run test` runs Jest with `--coverage`, so the threshold is enforced there and therefore by `pnpm run all` and CI. Single-file runs such as `pnpm exec jest tests/version.test.ts` skip coverage and the threshold. Don't drop this without a reason.
 
 ## Release flow
 

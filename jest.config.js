@@ -16,5 +16,8 @@ module.exports = {
   moduleNameMapper: {
     '^@octokit/rest$': '<rootDir>/tests/__mocks__/@octokit/rest.ts',
     '^@octokit/graphql$': '<rootDir>/tests/__mocks__/@octokit/graphql.ts',
+    '^@actions/core$': '<rootDir>/tests/__mocks__/@actions/core.ts',
+    '^@actions/exec$': '<rootDir>/tests/__mocks__/@actions/exec.ts',
+    '^@actions/github$': '<rootDir>/tests/__mocks__/@actions/github.ts',
   },
 };
