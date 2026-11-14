@@ -10,7 +10,7 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "build": "ncc build src/index.ts -o dist --license licenses.txt",
-    "test": "jest --passWithNoTests",
+    "test": "jest --passWithNoTests --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --no-error-on-unmatched-pattern",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
