@@ -30,8 +30,8 @@ importers:
         specifier: ^5.4.3
         version: 5.4.3
       minimatch:
-        specifier: ^10.2.6
-        version: 10.2.6
+        specifier: ^11.0.8
+        version: 11.0.8
     devDependencies:
       '@types/jest':
         specifier: ^30.0.0
